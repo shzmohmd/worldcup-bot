@@ -125,11 +125,43 @@ def handle_result(ack, body, client):
         return
 
     parts = body.get("text", "").strip().split()
+    if len(parts) == 1:
+        match_id = parts[0]
+        match = db.get_match(match_id)
+
+        if not match:
+            client.chat_postEphemeral(
+                channel=body["channel_id"],
+                user=user_id,
+                text="Match not found."
+            )
+            return
+
+        client.chat_postEphemeral(
+            channel=body["channel_id"],
+            user=user_id,
+            text=(
+                f"📊 *Set Result for Match #{match_id}*\n\n"
+                f"1️⃣ {match['team1']}\n"
+                f"2️⃣ {match['team2']}\n\n"
+                f"Use:\n"
+                f"`/wc-result {match_id} <team1_score> <team2_score>`\n\n"
+                f"Example:\n"
+                f"`/wc-result {match_id} 2 0`\n\n"
+                f"If draw:\n"
+                f"`/wc-result {match_id} 1 1 1`\n\n"
+                f"Penalty winner:\n"
+                f"`1 = {match['team1']}`\n"
+                f"`2 = {match['team2']}`"
+            )
+        )
+        return
+
     if len(parts) < 3:
         client.chat_postEphemeral(
             channel=body["channel_id"],
             user=user_id,
-            text="Usage: `/wc-result <match_id> <score1> <score2> [pen_winner: 1 or 2]`\nExample: `/wc-result 5 1 1 2`"
+            text="Usage: `/wc-result <match_id> <score1> <score2> [pen_winner]`"
         )
         return
 
