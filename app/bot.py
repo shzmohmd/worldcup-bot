@@ -142,12 +142,43 @@ def handle_result(ack, body, client):
     # Score all predictions for this match
     predictions = db.get_predictions_for_match(match_id)
     for pred in predictions:
-        pts = calculate_points(
-            pred["predicted_score1"], pred["predicted_score2"], pred.get("predicted_pen_winner"),
-            score1, score2, pen_winner
-        )
-        db.update_prediction_score(pred["id"], pts)
-        db.update_user_total_points(pred["user_id"], pts)
+    pts = calculate_points(
+        pred["predicted_score1"],
+        pred["predicted_score2"],
+        pred.get("predicted_pen_winner"),
+        score1,
+        score2,
+        pen_winner
+    )
+
+    db.update_prediction_score(pred["id"], pts)
+    db.update_user_total_points(pred["user_id"], pts)
+
+    # Stats update
+    exact = (
+        pred["predicted_score1"] == score1
+        and pred["predicted_score2"] == score2
+    )
+
+    pred_winner = (
+        1 if pred["predicted_score1"] > pred["predicted_score2"]
+        else 2 if pred["predicted_score2"] > pred["predicted_score1"]
+        else 0
+    )
+
+    actual_winner = (
+        1 if score1 > score2
+        else 2 if score2 > score1
+        else 0
+    )
+
+    correct_winner = pred_winner == actual_winner
+
+    db.update_user_stats(
+        pred["user_id"],
+        exact=exact,
+        correct_winner=correct_winner
+    )
 
     # Announce result in channel
     channel = os.environ.get("WC_CHANNEL", body["channel_id"])
