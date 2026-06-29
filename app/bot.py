@@ -191,15 +191,24 @@ def handle_result(ack, body, client):
 
 @slack_app.command("/wc-schedule")
 def handle_schedule(ack, body, client):
-    """Show upcoming match schedule."""
     ack()
-    matches = db.get_upcoming_matches(limit=10)
+
+    matches = db.get_today_matches()
+
+    if not matches:
+        client.chat_postEphemeral(
+            channel=body["channel_id"],
+            user=body["user_id"],
+            text="⚽ No matches today."
+        )
+        return
+
     blocks = _build_schedule_blocks(matches)
+
     client.chat_postEphemeral(
         channel=body["channel_id"],
         user=body["user_id"],
-        blocks=blocks,
-        text="📅 Upcoming Matches"
+        blocks=blocks
     )
 
 
