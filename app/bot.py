@@ -5,7 +5,7 @@ Stack: Python + Slack Bolt + Supabase (Postgres)
 
 import os
 import json
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from slack_bolt import App
 from slack_bolt.adapter.flask import SlackRequestHandler
 from flask import Flask, request
@@ -15,6 +15,11 @@ from app.scheduler import start_scheduler
 from app.scoring import calculate_points
 
 load_dotenv()
+
+def to_ist(utc_time_str):
+    dt = datetime.fromisoformat(utc_time_str)
+    ist = dt + timedelta(hours=5, minutes=30)
+    return ist.strftime("%d %b | %I:%M %p IST")
 
 # Initialize Slack Bolt app
 slack_app = App(
@@ -142,14 +147,14 @@ def handle_result(ack, body, client):
     # Score all predictions for this match
     predictions = db.get_predictions_for_match(match_id)
     for pred in predictions:
-    pts = calculate_points(
-        pred["predicted_score1"],
-        pred["predicted_score2"],
-        pred.get("predicted_pen_winner"),
-        score1,
-        score2,
-        pen_winner
-    )
+        pts = calculate_points(
+            pred["predicted_score1"],
+            pred["predicted_score2"],
+            pred.get("predicted_pen_winner"),
+            score1,
+            score2,
+            pen_winner
+        )
 
     db.update_prediction_score(pred["id"], pts)
     db.update_user_total_points(pred["user_id"], pts)
@@ -251,7 +256,7 @@ def handle_prediction_submission(ack, body, view, client):
 
 def _build_prediction_modal(match):
     match_id = str(match["id"])
-    match_time = datetime.fromisoformat(match["match_time"]).strftime("%b %d, %Y %H:%M UTC")
+    match_time = to_ist(match["match_time"])
     is_knockout = match.get("is_knockout", True)
 
     blocks = [
@@ -369,7 +374,7 @@ def _build_schedule_blocks(matches):
 
     rows = []
     for m in matches:
-        t = datetime.fromisoformat(m["match_time"]).strftime("%b %d %H:%M UTC")
+        t = to_ist(m["match_time"])
         rows.append(f"• *#{m['id']}* {m['team1']} 🆚 {m['team2']} — _{m.get('stage', '')}_ | {t}\n  Use `/wc-predict {m['id']}` to predict")
 
     return [
