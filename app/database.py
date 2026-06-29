@@ -135,23 +135,23 @@ class Database:
         return res.data or []
 
     def get_today_matches(self):
-    from datetime import datetime, timezone
+        from datetime import datetime, timezone
 
-    now = datetime.now(timezone.utc)
-    today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
-    today_end = now.replace(hour=23, minute=59, second=59)
+        now = datetime.now(timezone.utc)
+        today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        today_end = now.replace(hour=23, minute=59, second=59, microsecond=999999)
 
-    res = (
-        self.client.table("matches")
-        .select("*")
-        .is_("result_score1", "null")
-        .gte("match_time", today_start.isoformat())
-        .lte("match_time", today_end.isoformat())
-        .order("match_time")
-        .execute()
-    )
+        res = (
+            self.client.table("matches")
+            .select("*")
+            .is_("result_score1", "null")
+            .gte("match_time", today_start.isoformat())
+            .lte("match_time", today_end.isoformat())
+            .order("match_time")
+            .execute()
+        )
 
-    return res.data or []
+        return res.data or []
 
 
 db = Database()
