@@ -367,55 +367,63 @@ def _build_prediction_modal(match):
 
 def _build_leaderboard_blocks(leaders):
     medals = ["🥇", "🥈", "🥉"]
-    blocks = [
+
+    if not leaders:
+        return [
+            {
+                "type": "header",
+                "text": {
+                    "type": "plain_text",
+                    "text": "🏆 World Cup Leaderboard"
+                }
+            },
+            {"type": "divider"},
+            {
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": "No predictions yet!"
+                }
+            }
+        ]
+
+    rows = []
+
+    for i, user in enumerate(leaders):
+        rank = medals[i] if i < 3 else f"{i+1}️⃣"
+        rows.append(
+            f"{rank} <@{user['user_id']}> — *{user['total_points']} pts*"
+        )
+
+    leaderboard_text = "\n".join(rows)
+
+    return [
         {
             "type": "header",
             "text": {
                 "type": "plain_text",
-                "text": "🏆 World Cup 2026 Leaderboard"
+                "text": "🏆 World Cup Leaderboard"
             }
         },
-        {"type": "divider"}
-    ]
-
-    if not leaders:
-        blocks.append({
+        {"type": "divider"},
+        {
             "type": "section",
             "text": {
                 "type": "mrkdwn",
-                "text": "No predictions yet!"
+                "text": leaderboard_text
             }
-        })
-        return blocks
-
-    for i, user in enumerate(leaders):
-        badge = medals[i] if i < 3 else f"{i+1}."
-
-        blocks.append({
-            "type": "section",
-            "text": {
-                "type": "mrkdwn",
-                "text":
-                    f"{badge} <@{user['user_id']}>\n"
-                    f"⭐ *{user['total_points']} pts*"
-                    f" | 🎯 {user['exact_scores']} exact"
-                    f" | ✅ {user['correct_winners']} winners"
-            }
-        })
-
-    blocks.append(
+        },
+        {"type": "divider"},
         {
             "type": "context",
             "elements": [
                 {
                     "type": "mrkdwn",
-                    "text": "🎯 Exact: 3pts | ⚖️ Goal diff: 2pts | ✅ Winner: 1pt | 🥊 Penalty: +1pt"
+                    "text": "🎯 Exact = 3 pts | ⚖️ Goal Diff = 2 pts | ✅ Winner Pick = 1 pt | 🥊 Penalty Pick = +1 pt"
                 }
             ]
         }
-    )
-
-    return blocks
+    ]
 
 
 def _build_my_predictions_blocks(predictions):
