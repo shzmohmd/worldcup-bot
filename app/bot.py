@@ -5,6 +5,7 @@ Stack: Python + Slack Bolt + Supabase (Postgres)
 
 import os
 import json
+import re
 from datetime import datetime, timezone, timedelta
 from slack_bolt import App
 from slack_bolt.adapter.flask import SlackRequestHandler
@@ -156,34 +157,34 @@ def handle_result(ack, body, client):
             pen_winner
         )
 
-    db.update_prediction_score(pred["id"], pts)
-    db.update_user_total_points(pred["user_id"], pts)
+        db.update_prediction_score(pred["id"], pts)
+        db.update_user_total_points(pred["user_id"], pts)
 
-    # Stats update
-    exact = (
-        pred["predicted_score1"] == score1
-        and pred["predicted_score2"] == score2
-    )
+        # Stats update
+        exact = (
+            pred["predicted_score1"] == score1
+            and pred["predicted_score2"] == score2
+        )
 
-    pred_winner = (
-        1 if pred["predicted_score1"] > pred["predicted_score2"]
-        else 2 if pred["predicted_score2"] > pred["predicted_score1"]
-        else 0
-    )
+        pred_winner = (
+            1 if pred["predicted_score1"] > pred["predicted_score2"]
+            else 2 if pred["predicted_score2"] > pred["predicted_score1"]
+            else 0
+        )
 
-    actual_winner = (
-        1 if score1 > score2
-        else 2 if score2 > score1
-        else 0
-    )
+        actual_winner = (
+            1 if score1 > score2
+            else 2 if score2 > score1
+            else 0
+        )
 
-    correct_winner = pred_winner == actual_winner
+        correct_winner = pred_winner == actual_winner
 
-    db.update_user_stats(
-        pred["user_id"],
-        exact=exact,
-        correct_winner=correct_winner
-    )
+        db.update_user_stats(
+            pred["user_id"],
+            exact=exact,
+            correct_winner=correct_winner
+        )
 
     # Announce result in channel
     channel = os.environ.get("WC_CHANNEL", body["channel_id"])
@@ -228,8 +229,28 @@ def handle_prediction_submission(ack, body, view, client):
     values = view["state"]["values"]
     match_id = view["private_metadata"]
 
-    score1 = int(values["score1"]["score1_input"]["value"])
-    score2 = int(values["score2"]["score2_input"]["value"])
+    try:
+        score1 = int(values["score1"]["score1_input"]["value"])
+        score2 = int(values["score2"]["score2_input"]["value"])
+    except ValueError:
+        ack(
+            response_action="errors",
+            errors={
+                "score1": "Enter valid number",
+                "score2": "Enter valid number"
+            }
+        )
+        return
+
+    if score1 < 0 or score2 < 0:
+        ack(
+            response_action="errors",
+            errors={
+                "score1": "Score cannot be negative"
+            }
+        )
+        return
+
     pen_winner_val = values.get("pen_winner", {}).get("pen_winner_select", {}).get("selected_option")
     pen_winner = int(pen_winner_val["value"]) if pen_winner_val else None
 
@@ -264,7 +285,11 @@ def _build_prediction_modal(match):
             "type": "section",
             "text": {
                 "type": "mrkdwn",
-                "text": f"*{match['team1']}* 🆚 *{match['team2']}*\n📅 {match_time} | 🏟️ {match.get('stage', 'Knockout')}"
+                "text": (
+                    f"🏆 *{match.get('stage', 'Knockout')}*\n"
+                    f"*{match['team1']}* ⚔️ *{match['team2']}*\n"
+                    f"🕒 {match_time}"
+                )
             }
         },
         {"type": "divider"},
@@ -323,27 +348,55 @@ def _build_prediction_modal(match):
 
 def _build_leaderboard_blocks(leaders):
     medals = ["🥇", "🥈", "🥉"]
-    rows = []
-    for i, row in enumerate(leaders):
-        rank = medals[i] if i < 3 else f"*{i+1}.*"
-        rows.append(f"{rank} <@{row['user_id']}> — *{row['total_points']} pts* "
-                    f"({row['exact_scores']} exact, {row['correct_winners']} winners)")
-
-    return [
+    blocks = [
         {
             "type": "header",
-            "text": {"type": "plain_text", "text": "🏆 World Cup 2026 Leaderboard"}
+            "text": {
+                "type": "plain_text",
+                "text": "🏆 World Cup 2026 Leaderboard"
+            }
         },
-        {"type": "divider"},
-        {
+        {"type": "divider"}
+    ]
+
+    if not leaders:
+        blocks.append({
             "type": "section",
-            "text": {"type": "mrkdwn", "text": "\n".join(rows) if rows else "No predictions yet!"}
-        },
+            "text": {
+                "type": "mrkdwn",
+                "text": "No predictions yet!"
+            }
+        })
+        return blocks
+
+    for i, user in enumerate(leaders):
+        badge = medals[i] if i < 3 else f"{i+1}."
+
+        blocks.append({
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text":
+                    f"{badge} <@{user['user_id']}>\n"
+                    f"⭐ *{user['total_points']} pts*"
+                    f" | 🎯 {user['exact_scores']} exact"
+                    f" | ✅ {user['correct_winners']} winners"
+            }
+        })
+
+    blocks.append(
         {
             "type": "context",
-            "elements": [{"type": "mrkdwn", "text": "🎯 Exact score: 3pts | ✅ Correct winner: 1pt | ⚖️ Correct goal diff: 2pts | 🥊 Penalty winner: +1pt"}]
+            "elements": [
+                {
+                    "type": "mrkdwn",
+                    "text": "🎯 Exact: 3pts | ⚖️ Goal diff: 2pts | ✅ Winner: 1pt | 🥊 Penalty: +1pt"
+                }
+            ]
         }
-    ]
+    )
+
+    return blocks
 
 
 def _build_my_predictions_blocks(predictions):
@@ -369,19 +422,33 @@ def _build_my_predictions_blocks(predictions):
 
 
 def _build_schedule_blocks(matches):
-    if not matches:
-        return [{"type": "section", "text": {"type": "mrkdwn", "text": "No upcoming matches scheduled."}}]
+    blocks = []
 
-    rows = []
-    for m in matches:
-        t = to_ist(m["match_time"])
-        rows.append(f"• *#{m['id']}* {m['team1']} 🆚 {m['team2']} — _{m.get('stage', '')}_ | {t}\n  Use `/wc-predict {m['id']}` to predict")
+    for match in matches:
+        blocks.extend([
+            {
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text":
+                        f"🏆 *{match['team1']} vs {match['team2']}*\n"
+                        f"📍 {match['stage']}\n"
+                        f"🕒 {to_ist(match['match_time'])}"
+                },
+                "accessory": {
+                    "type": "button",
+                    "text": {
+                        "type": "plain_text",
+                        "text": "Predict"
+                    },
+                    "action_id": f"predict_match_{match['id']}",
+                    "value": str(match["id"])
+                }
+            },
+            {"type": "divider"}
+        ])
 
-    return [
-        {"type": "header", "text": {"type": "plain_text", "text": "📅 Upcoming Matches"}},
-        {"type": "divider"},
-        {"type": "section", "text": {"type": "mrkdwn", "text": "\n".join(rows)}}
-    ]
+    return blocks
 
 
 def _build_result_announcement(match, score1, score2, pen_winner, predictions):
@@ -390,31 +457,55 @@ def _build_result_announcement(match, score1, score2, pen_winner, predictions):
         winner_name = match["team1"] if pen_winner == 1 else match["team2"]
         pen_text = f"\n🥊 *Penalties:* {winner_name} win"
 
-    winner = match["team1"] if score1 > score2 else (match["team2"] if score2 > score1 else "Draw")
-    winner_text = f"🏆 Winner: *{winner}*" if winner != "Draw" else "🤝 *Draw*"
+    winner = (
+        match["team1"] if score1 > score2
+        else match["team2"] if score2 > score1
+        else "Draw"
+    )
+
+    winner_text = (
+        f"🏆 Winner: *{winner}*" if winner != "Draw"
+        else "🤝 *Match Drawn*"
+    )
 
     # Top predictors for this match
     scored = [p for p in predictions if p.get("points") is not None]
     scored.sort(key=lambda x: x["points"], reverse=True)
     top = scored[:3]
-    top_text = ""
+
+    top_text = "_No top predictors for this match_"
     if top:
-        top_lines = [f"<@{p['user_id']}> ({p['points']} pts)" for p in top]
-        top_text = f"\n\n🎯 *Top predictors:* {', '.join(top_lines)}"
+        top_lines = [
+            f"• <@{p['user_id']}> — *{p['points']} pts*"
+            for p in top
+        ]
+        top_text = "\n".join(top_lines)
 
     return [
         {
             "type": "header",
-            "text": {"type": "plain_text", "text": f"📊 Final Result: {match['stage']}"}
+            "text": {
+                "type": "plain_text",
+                "text": f"📊 Final Result • {match['stage']}"
+            }
         },
+        {"type": "divider"},
         {
             "type": "section",
             "text": {
                 "type": "mrkdwn",
                 "text": (
-                    f"*{match['team1']}* *{score1}* – *{score2}* *{match['team2']}*{pen_text}\n"
-                    f"{winner_text}{top_text}"
+                    f"⚽ *{match['team1']}* *{score1}* — *{score2}* *{match['team2']}*\n"
+                    f"{winner_text}{pen_text}"
                 )
+            }
+        },
+        {"type": "divider"},
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": f"🎯 *Top Predictors*\n{top_text}"
             }
         },
         {
@@ -422,7 +513,10 @@ def _build_result_announcement(match, score1, score2, pen_winner, predictions):
             "elements": [
                 {
                     "type": "button",
-                    "text": {"type": "plain_text", "text": "🏆 View Leaderboard"},
+                    "text": {
+                        "type": "plain_text",
+                        "text": "🏆 View Leaderboard"
+                    },
                     "style": "primary",
                     "action_id": "view_leaderboard_button"
                 }
@@ -441,6 +535,27 @@ def handle_leaderboard_button(ack, body, client):
         user=body["user"]["id"],
         blocks=blocks,
         text="🏆 Leaderboard"
+    )
+
+
+@slack_app.action(re.compile("^predict_match_"))
+def open_prediction_from_schedule(ack, body, client):
+    ack()
+
+    match_id = body["actions"][0]["value"]
+    match = db.get_match(match_id)
+
+    if not match:
+        client.chat_postEphemeral(
+            channel=body["channel"]["id"],
+            user=body["user"]["id"],
+            text="Match not found."
+        )
+        return
+
+    client.views_open(
+        trigger_id=body["trigger_id"],
+        view=_build_prediction_modal(match)
     )
 
 
