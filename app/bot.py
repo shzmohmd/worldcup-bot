@@ -400,34 +400,17 @@ def _build_prediction_modal(match):
 def _build_leaderboard_blocks(leaders):
     medals = ["🥇", "🥈", "🥉"]
 
-    if not leaders:
-        return [
-            {
-                "type": "header",
-                "text": {
-                    "type": "plain_text",
-                    "text": "🏆 World Cup Leaderboard"
-                }
-            },
-            {"type": "divider"},
-            {
-                "type": "section",
-                "text": {
-                    "type": "mrkdwn",
-                    "text": "No predictions yet!"
-                }
-            }
-        ]
-
     rows = []
 
     for i, user in enumerate(leaders):
-        rank = medals[i] if i < 3 else f"{i+1}️⃣"
-        rows.append(
-            f"{rank} <@{user['user_id']}> — *{user['total_points']} pts*"
-        )
+        rank = medals[i] if i < 3 else f"{i+1}."
+        name = f"<@{user['user_id']}>"
+        points = user["total_points"]
 
-    leaderboard_text = "\n".join(rows)
+        rows.append(f"{rank:<4} {name:<20} {points:>3}")
+
+    table = "Rank  Player               Pts\n"
+    table += "\n".join(rows)
 
     return [
         {
@@ -442,7 +425,7 @@ def _build_leaderboard_blocks(leaders):
             "type": "section",
             "text": {
                 "type": "mrkdwn",
-                "text": leaderboard_text
+                "text": f"```{table}```"
             }
         },
         {"type": "divider"},
@@ -451,7 +434,8 @@ def _build_leaderboard_blocks(leaders):
             "elements": [
                 {
                     "type": "mrkdwn",
-                    "text": "🎯 Exact = 3 pts | ⚖️ Goal Diff = 2 pts | ✅ Winner Pick = 1 pt | 🥊 Penalty Pick = +1 pt"
+                    "text":
+                        "🎯 Exact = 3 pts | ⚖️ Goal Diff = 2 pts | ✅ Winner Pick = 1 pt | 🥊 Penalty Pick = +1 pt"
                 }
             ]
         }
