@@ -254,6 +254,25 @@ def handle_prediction_submission(ack, body, view, client):
     pen_winner_val = values.get("pen_winner", {}).get("pen_winner_select", {}).get("selected_option")
     pen_winner = int(pen_winner_val["value"]) if pen_winner_val else None
 
+    # Penalty winner validation
+    if score1 != score2 and pen_winner:
+        ack(
+            response_action="errors",
+            errors={
+                "pen_winner": "Penalty winner should only be selected if the match is a draw."
+            }
+        )
+        return
+
+    if score1 == score2 and not pen_winner:
+        ack(
+            response_action="errors",
+            errors={
+                "pen_winner": "Please select penalty winner for a draw."
+            }
+        )
+        return
+
     match = db.get_match(match_id)
 
     # Upsert prediction
