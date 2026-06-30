@@ -735,7 +735,7 @@ def open_prediction_from_schedule(ack, body, client):
 
     client.views_open(
         trigger_id=body["trigger_id"],
-        view=_build_prediction_modal(match, body["channel_id"])
+        view=_build_prediction_modal(match, body["channel"]["id"])
     )
 
 
