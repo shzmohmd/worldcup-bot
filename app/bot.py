@@ -417,7 +417,13 @@ def _build_prediction_modal(match):
 def _build_leaderboard_blocks(leaders):
     medals = ["🥇", "🥈", "🥉"]
 
-    names = [f"@{user['display_name']}" if user.get("display_name") else f"<@{user['user_id']}>" for user in leaders]
+    names = [
+        f"@{user['display_name']}"
+        if user.get("display_name")
+        else f"<@{user['user_id']}>"
+        for user in leaders
+    ]
+
     max_name_length = max(len(name) for name in names) if names else 10
 
     rows = []
@@ -425,18 +431,23 @@ def _build_leaderboard_blocks(leaders):
     for i, user in enumerate(leaders):
         rank = medals[i] if i < 3 else f"{i+1}."
 
-        # Make rank width fixed (important fix)
-        rank = rank.ljust(4)
+        # Fixed rank width
+        rank = rank.ljust(5)
 
         # Dynamic player width
-        name = names[i].ljust(max_name_length + 2)
+        name = names[i].ljust(max_name_length + 3)
 
-        # Fixed point width
-        points = str(user["total_points"]).rjust(3)
+        # Fixed points width
+        points = str(user["total_points"]).rjust(4)
 
         rows.append(f"{rank}{name}{points}")
 
-    table = f"{'Rank'.ljust(4)}{'Player'.ljust(max_name_length + 2)}Pts\n"
+    table = (
+        f"{'Rank'.ljust(5)}"
+        f"{'Player'.ljust(max_name_length + 3)}"
+        f"{'Pts'.rjust(4)}\n"
+    )
+
     table += "\n".join(rows)
 
     return [
