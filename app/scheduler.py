@@ -99,7 +99,11 @@ def post_evening_prediction_reminder(app):
                 app.client.chat_postMessage(
                     channel=user["user_id"],
                     blocks=blocks,
-                    text="⏰ Reminder! You still have pending World Cup predictions."
+                    text=(
+                        "⏰ *YOUGotaGift Prediction Reminder*\n"
+                        "You still have pending fixtures for today.\n"
+                        "Mark your predictions before kick-off ⚽"
+                    )
                 )
 
         except Exception as e:
