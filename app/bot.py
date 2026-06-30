@@ -434,14 +434,14 @@ def _build_leaderboard_blocks(leaders):
 
         rank = f"{i+1}.".ljust(6)
         name = names[i].ljust(max_name_length + 4)
-        points = str(user["total_points"]).ljust(6)
+        points = str(user["total_points"]).ljust(10)
 
         rows.append(f"{badge} {rank}{name}{points}")
 
     table = (
         f"{'':<1} "
         f"{'Rank'.ljust(5)}"
-        f"{'Player'.ljust(max_name_length + 4)}"
+        f"{'Player'.ljust(max_name_length + 7)}"
         f"{'Pts'.ljust(6)}\n"
     )
 
