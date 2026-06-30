@@ -80,7 +80,7 @@ def handle_predict(ack, body, client):
 
     client.views_open(
         trigger_id=body["trigger_id"],
-        view=_build_prediction_modal(match)
+        view=_build_prediction_modal(match, body["channel_id"])
     )
 
 
@@ -279,7 +279,9 @@ def handle_schedule(ack, body, client):
 def handle_prediction_submission(ack, body, view, client):
     user_id = body["user"]["id"]
     values = view["state"]["values"]
-    match_id = view["private_metadata"]
+    metadata = json.loads(view["private_metadata"])
+    match_id = metadata["match_id"]
+    channel_id = metadata.get("channel_id")
 
     try:
         score1 = int(values["score1"]["score1_input"]["value"])
@@ -343,7 +345,14 @@ def handle_prediction_submission(ack, body, view, client):
     ack()
 
     # Upsert prediction
-    db.upsert_prediction(user_id, match_id, score1, score2, pen_winner)
+    db.upsert_prediction(
+        user_id,
+        match_id,
+        score1,
+        score2,
+        pen_winner,
+        channel_id
+    )
 
     # Confirm to user
     pen_text = ""
@@ -361,7 +370,7 @@ def handle_prediction_submission(ack, body, view, client):
 # BLOCK BUILDERS
 # ─────────────────────────────────────────────
 
-def _build_prediction_modal(match):
+def _build_prediction_modal(match, channel_id=None):
     match_id = str(match["id"])
     match_time = to_ist(match["match_time"])
     is_knockout = match.get("is_knockout", True)
@@ -424,7 +433,10 @@ def _build_prediction_modal(match):
     return {
         "type": "modal",
         "callback_id": "submit_prediction",
-        "private_metadata": match_id,
+        "private_metadata": json.dumps({
+            "match_id": match_id,
+            "channel_id": body["channel_id"]
+        })
         "title": {"type": "plain_text", "text": "⚽ Score Prediction"},
         "submit": {"type": "plain_text", "text": "Submit"},
         "close": {"type": "plain_text", "text": "Cancel"},
@@ -723,7 +735,7 @@ def open_prediction_from_schedule(ack, body, client):
 
     client.views_open(
         trigger_id=body["trigger_id"],
-        view=_build_prediction_modal(match)
+        view=_build_prediction_modal(match, body["channel_id"])
     )
 
 
