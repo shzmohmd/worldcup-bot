@@ -175,4 +175,15 @@ class Database:
         return None
 
 
+    def get_all_participants(self):
+        res = (
+            self.client.table("predictions")
+            .select("user_id")
+            .execute()
+        )
+
+        user_ids = list({row["user_id"] for row in (res.data or [])})
+        return user_ids
+
+
 db = Database()
