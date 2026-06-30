@@ -430,7 +430,7 @@ def _build_leaderboard_blocks(leaders):
 
     for i, user in enumerate(leaders):
         # Medal separate from rank
-        badge = medals[i] if i < 3 else "  "
+        badge = (medals[i] if i < 3 else "").ljust(2)
 
         # Fixed-width columns
         rank = f"{i+1}.".ljust(8)        # 8 chars
