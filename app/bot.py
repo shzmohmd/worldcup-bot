@@ -248,7 +248,7 @@ def handle_result(ack, body, client):
 def handle_schedule(ack, body, client):
     ack()
 
-    matches = db.get_today_matches()
+    matches = db.get_upcoming_matches()
 
     if not matches:
         client.chat_postEphemeral(
