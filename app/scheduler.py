@@ -16,46 +16,10 @@ logger = logging.getLogger(__name__)
 CHANNEL = os.environ.get("WC_CHANNEL")
 
 
-def post_daily_leaderboard(app):
-    """Send leaderboard to all participants every day."""
-    from app.bot import _build_leaderboard_blocks
-    top_leaders = db.get_leaderboard(limit=15)
-    all_users = db.get_leaderboard()
-
-    if not top_leaders:
-        return
-
-    blocks = _build_leaderboard_blocks(top_leaders)
-
-    for user in all_users:
-        try:
-            user_rank = db.get_user_rank(user["user_id"])
-            user_blocks = blocks.copy()
-
-            if user_rank and user_rank["rank"] > 15:
-                user_blocks.append({"type": "divider"})
-                user_blocks.append({
-                    "type": "section",
-                    "text": {
-                        "type": "mrkdwn",
-                        "text":
-                            f"📍 *Your Rank:* #{user_rank['rank']} — *{user_rank['points']} pts*"
-                    }
-                })
-
-            app.client.chat_postMessage(
-                channel=user["user_id"],
-                blocks=user_blocks,
-                text="🏆 Daily Leaderboard Update"
-            )
-        except Exception as e:
-            logger.error(f"Leaderboard DM failed for {user['user_id']}: {e}")
-
-
 def post_daily_schedule(app):
     """Post today's matches every day at 11 AM IST."""
     from app.bot import _build_schedule_blocks
-    matches = db.get_today_matches()
+    matches = db.get_upcoming_matches(limit=5)
 
     if not matches:
         logger.info("No matches today")
@@ -116,19 +80,9 @@ def start_scheduler(app):
     # Daily schedule at 11 AM IST
     scheduler.add_job(
       post_daily_schedule,
-      CronTrigger(hour=15, minute=7, timezone="Asia/Kolkata"),
+      CronTrigger(hour=17, minute=10, timezone="Asia/Kolkata"),
       args=[app],
       id="daily_schedule",
-      replace_existing=True,
-      misfire_grace_time=300
-    )
-
-    # Daily leaderboard DM at 11 AM IST
-    scheduler.add_job(
-      post_daily_leaderboard,
-      CronTrigger(hour=15, minute=15, timezone="Asia/Kolkata"),
-      args=[app],
-      id="daily_leaderboard",
       replace_existing=True,
       misfire_grace_time=300
     )
@@ -136,7 +90,7 @@ def start_scheduler(app):
     # Pending prediction reminder
     scheduler.add_job(
         post_evening_prediction_reminder,
-        CronTrigger(hour=15, minute=10, timezone="Asia/Kolkata"),
+        CronTrigger(hour=17, minute=15, timezone="Asia/Kolkata"),
         args=[app],
         id="evening_prediction_reminder",
         replace_existing=True,
