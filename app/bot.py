@@ -434,15 +434,15 @@ def _build_leaderboard_blocks(leaders):
 
         # Fixed-width columns
         rank = f"{i+1}.".ljust(8)        # 8 chars
-        name = names[i].ljust(15)        # 15 chars
+        name = names[i].ljust(25)        # 15 chars
         points = str(user["total_points"]).ljust(5)   # 5 chars
 
         rows.append(f"{badge} {rank}{name}{points}")
 
     table = (
-        f"{'':<3}"        # keep header aligned with medal space
+        f"{'':<2}"        # keep header aligned with medal space
         f"{'Rank'.ljust(8)}"
-        f"{'Player'.ljust(15)}"
+        f"{'Player'.ljust(25)}"
         f"{'Pts'.ljust(5)}\n"
     )
 
