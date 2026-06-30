@@ -11,15 +11,16 @@ from datetime import datetime, timezone, timedelta
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
 from app.database import db
+from app.bot import _build_schedule_blocks, _build_leaderboard_blocks, to_ist
 
 logger = logging.getLogger(__name__)
 
-CHANNEL = os.environ.get("WC_CHANNEL", "#world-cup-2026")
+CHANNEL = os.environ.get("WC_CHANNEL")
 
 
 def post_match_poll(app, match):
     """Post a pre-match prediction reminder to the channel."""
-    match_time = datetime.fromisoformat(match["match_time"]).strftime("%b %d, %H:%M UTC")
+    match_time = to_ist(match["match_time"])
 
     blocks = [
         {
@@ -78,35 +79,42 @@ def post_closing_reminder(app, match):
 
 
 def post_daily_leaderboard(app):
-    """Post the leaderboard each morning."""
-    leaders = db.get_leaderboard(limit=10)
+    """Send leaderboard to all participants every day."""
+    leaders = db.get_leaderboard(limit=15)
+
     if not leaders:
         return
 
-    medals = ["🥇", "🥈", "🥉"]
-    rows = []
-    for i, row in enumerate(leaders):
-        rank = medals[i] if i < 3 else f"*{i+1}.*"
-        rows.append(f"{rank} <@{row['user_id']}> — *{row['total_points']} pts*")
+    blocks = _build_leaderboard_blocks(leaders)
+
+    for user in leaders:
+        try:
+            app.client.chat_postMessage(
+                channel=user["user_id"],
+                blocks=blocks,
+                text="🏆 Daily Leaderboard Update"
+            )
+        except Exception as e:
+            logger.error(f"Failed DM to {user['user_id']}: {e}")
+
+
+def post_daily_schedule(app):
+    """Post today's matches every day at 11 AM IST."""
+    matches = db.get_today_matches()
+
+    if not matches:
+        logger.info("No matches today")
+        return
+
+    blocks = _build_schedule_blocks(matches)
 
     app.client.chat_postMessage(
         channel=CHANNEL,
-        blocks=[
-            {
-                "type": "header",
-                "text": {"type": "plain_text", "text": "🌅 Good morning! Today's Leaderboard"}
-            },
-            {
-                "type": "section",
-                "text": {"type": "mrkdwn", "text": "\n".join(rows)}
-            },
-            {
-                "type": "context",
-                "elements": [{"type": "mrkdwn", "text": "Use `/wc-schedule` to see today's matches | `/wc-mypredictions` for your picks"}]
-            }
-        ],
-        text="🏆 World Cup 2026 Leaderboard"
+        blocks=blocks,
+        text="🏆 Today's World Cup Matches"
     )
+
+    logger.info("Posted daily schedule")
 
 
 def check_and_schedule_match_jobs(app, scheduler):
@@ -155,12 +163,24 @@ def check_and_schedule_match_jobs(app, scheduler):
 def start_scheduler(app):
     scheduler = BackgroundScheduler(timezone="UTC")
 
-    # Daily leaderboard at 9am UTC
+    # Daily schedule at 11 AM IST
     scheduler.add_job(
-        post_daily_leaderboard,
-        CronTrigger(hour=9, minute=0),
-        args=[app],
-        id="daily_leaderboard"
+      post_daily_schedule,
+      CronTrigger(hour=11, minute=0, timezone="Asia/Kolkata"),
+      args=[app],
+      id="daily_schedule",
+      replace_existing=True,
+      misfire_grace_time=300
+    )
+
+    # Daily leaderboard DM at 11 AM IST
+    scheduler.add_job(
+      post_daily_leaderboard,
+      CronTrigger(hour=11, minute=0, timezone="Asia/Kolkata"),
+      args=[app],
+      id="daily_leaderboard",
+      replace_existing=True,
+      misfire_grace_time=300
     )
 
     # Re-check for new matches every hour
