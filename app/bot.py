@@ -21,7 +21,10 @@ load_dotenv()
 
 def to_ist(utc_time_str):
     dt = datetime.fromisoformat(utc_time_str)
-    ist = dt + timedelta(hours=5, minutes=30)
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+
+    ist = dt.astimezone(timezone(timedelta(hours=5, minutes=30)))
     return ist.strftime("%d %b | %I:%M %p IST")
 
 # Initialize Slack Bolt app
