@@ -234,12 +234,13 @@ def handle_result(ack, body, client):
             correct_winner=correct_winner
         )
 
-    respond(
+    client.chat_postEphemeral(
+        channel=body["channel_id"],
+        user=user_id,
         text=(
             f"✅ Result saved successfully:\n"
             f"{match['team1']} {score1} - {score2} {match['team2']}"
-        ),
-        response_type="ephemeral"
+        )
     )
 
 
@@ -433,9 +434,9 @@ def _build_leaderboard_blocks(leaders):
         badge = medals[i] if i < 3 else "  "
 
         # Fixed-width columns
-        rank = f"{i+1}.".ljust(8)        # 8 chars
-        name = names[i][:20].ljust(20)        # 15 chars
-        points = str(user["total_points"]).ljust(5)   # 5 chars
+        rank = f"{i+1}.".ljust(8)    
+        name = names[i][:20].ljust(20)    
+        points = str(user["total_points"]).rjust(3)
 
         rows.append(f"{badge} {rank}{name}{points}")
 
