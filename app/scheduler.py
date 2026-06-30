@@ -39,7 +39,7 @@ def post_daily_schedule(app):
 def post_evening_prediction_reminder(app):
     """5 PM reminder to users with pending predictions."""
     from app.bot import _build_reminder_blocks
-    matches = db.get_today_matches()
+    matches = db.get_upcoming_matches()
 
     if not matches:
         logger.info("No matches today for reminder")
