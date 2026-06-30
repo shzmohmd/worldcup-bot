@@ -57,14 +57,15 @@ class Database:
     # PREDICTIONS
     # ─────────────────────────────────────────────
 
-    def upsert_prediction(self, user_id: str, match_id: str, score1: int, score2: int, pen_winner: int | None):
+    def upsert_prediction(self, user_id: str, match_id: str, score1: int, score2: int, pen_winner: int | None, channel_id=None):
         self.client.table("predictions").upsert({
             "user_id": user_id,
             "match_id": int(match_id),
             "predicted_score1": score1,
             "predicted_score2": score2,
             "predicted_pen_winner": pen_winner,
-            "points": None
+            "points": None,
+            "channel_id": channel_id
         }, on_conflict="user_id,match_id").execute()
 
     def get_predictions_for_match(self, match_id: str) -> list:
