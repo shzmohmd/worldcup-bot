@@ -19,18 +19,33 @@ CHANNEL = os.environ.get("WC_CHANNEL")
 
 def post_daily_leaderboard(app):
     """Send leaderboard to all participants every day."""
-    leaders = db.get_leaderboard(limit=15)
+    top_leaders = db.get_leaderboard(limit=15)
+    all_users = db.get_leaderboard()
 
-    if not leaders:
+    if not top_leaders:
         return
 
-    blocks = _build_leaderboard_blocks(leaders)
+    blocks = _build_leaderboard_blocks(top_leaders)
 
-    for user in leaders:
+    for user in all_users:
         try:
+          user_rank = db.get_user_rank(user["user_id"])
+          user_blocks = blocks.copy()
+
+          if user_rank and user_rank["rank"] > 15:
+              user_blocks.append({"type": "divider"})
+              user_blocks.append({
+                  "type": "section",
+                  "text": {
+                      "type": "mrkdwn",
+                      "text":
+                          f"📍 *Your Rank:* #{user_rank['rank']} — *{user_rank['points']} pts*"
+                  }
+              })
+
             app.client.chat_postMessage(
                 channel=user["user_id"],
-                blocks=blocks,
+                blocks=user_blocks,
                 text="🏆 Daily Leaderboard Update"
             )
         except Exception as e:
@@ -64,7 +79,7 @@ def post_evening_prediction_reminder(app):
         logger.info("No matches today for reminder")
         return
 
-    leaders = db.get_leaderboard(limit=100)
+    leaders = db.get_leaderboard()
 
     for user in leaders:
         try:
