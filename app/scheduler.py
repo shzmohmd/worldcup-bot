@@ -45,11 +45,11 @@ def post_evening_prediction_reminder(app):
         logger.info("No matches today for reminder")
         return
 
-    leaders = db.get_leaderboard()
+    participants = db.get_all_participants()
 
-    for user in leaders:
+    for user_id in participants:
         try:
-            user_predictions = db.get_user_predictions(user["user_id"])
+            user_predictions = db.get_user_predictions(user_id)
             predicted_match_ids = [p["match_id"] for p in user_predictions]
 
             pending_matches = [
@@ -61,7 +61,7 @@ def post_evening_prediction_reminder(app):
                 blocks = _build_reminder_blocks(pending_matches)
 
                 app.client.chat_postMessage(
-                    channel=user["user_id"],
+                    channel=user_id,
                     blocks=blocks,
                     text=(
                         "⏰ *YOUGotaGift Prediction Reminder*\n"
@@ -71,7 +71,7 @@ def post_evening_prediction_reminder(app):
                 )
 
         except Exception as e:
-            logger.error(f"Reminder DM failed for {user['user_id']}: {e}")
+            logger.error(f"Reminder DM failed for {user_id}: {e}")
 
 
 def start_scheduler(app):
