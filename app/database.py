@@ -124,14 +124,17 @@ class Database:
                 "correct_winners": 1 if correct_winner else 0
             }).execute()
 
-    def get_leaderboard(self, limit: int = 15) -> list:
-        res = (
+    def get_leaderboard(self, limit: int = None) -> list:
+        query = (
             self.client.table("leaderboard")
             .select("*")
             .order("total_points", desc=True)
-            .limit(limit)
-            .execute()
         )
+
+        if limit:
+            query = query.limit(limit)
+
+        res = query.execute()
         return res.data or []
 
     def get_today_matches(self):
