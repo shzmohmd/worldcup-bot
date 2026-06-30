@@ -74,7 +74,7 @@ def post_daily_schedule(app):
 
 def post_evening_prediction_reminder(app):
     """5 PM reminder to users with pending predictions."""
-    from app.bot import _build_schedule_blocks
+    from app.bot import _build_reminder_blocks
     matches = db.get_today_matches()
 
     if not matches:
@@ -94,7 +94,7 @@ def post_evening_prediction_reminder(app):
             ]
 
             if pending_matches:
-                blocks = _build_schedule_blocks(pending_matches)
+                blocks = _build_reminder_blocks(pending_matches)
 
                 app.client.chat_postMessage(
                     channel=user["user_id"],
