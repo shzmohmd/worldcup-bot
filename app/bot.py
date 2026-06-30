@@ -438,8 +438,7 @@ def _build_leaderboard_blocks(leaders):
 
         rows.append(f"{badge} {rank}{name}{points}")
 
-    table = ""
-    table += (
+    table = (
         f"{'':<3} "
         f"{'Rank'.ljust(5)}"
         f"{'Player'.ljust(max_name_length + 4)}"
