@@ -432,17 +432,17 @@ def _build_leaderboard_blocks(leaders):
         # Medal separate from rank (important for alignment)
         badge = medals[i] if i < 3 else "  "
 
-        rank = f"{i+1}.".ljust(5)
+        rank = f"{i+1}.".ljust(6)
         name = names[i].ljust(max_name_length + 4)
-        points = str(user["total_points"]).ljust(3)
+        points = str(user["total_points"]).ljust(6)
 
         rows.append(f"{badge} {rank}{name}{points}")
 
     table = (
-        f"{'':<3} "
+        f"{'':<1} "
         f"{'Rank'.ljust(5)}"
         f"{'Player'.ljust(max_name_length + 4)}"
-        f"{'Pts'.ljust(3)}\n"
+        f"{'Pts'.ljust(6)}\n"
     )
 
     table += "\n".join(rows)
