@@ -234,12 +234,12 @@ def handle_result(ack, body, client):
             correct_winner=correct_winner
         )
 
-    # Announce result in channel
-    channel = os.environ.get("WC_CHANNEL") or body["channel_id"]
-    client.chat_postMessage(
-        channel=channel,
-        blocks=_build_result_announcement(match, score1, score2, pen_winner, predictions),
-        text=f"📊 Result: {match['team1']} {score1} – {score2} {match['team2']}"
+    respond(
+        text=(
+            f"✅ Result saved successfully:\n"
+            f"{match['team1']} {score1} - {score2} {match['team2']}"
+        ),
+        response_type="ephemeral"
     )
 
 
@@ -612,22 +612,55 @@ def _build_result_announcement(match, score1, score2, pen_winner, predictions):
                 "type": "mrkdwn",
                 "text": f"🎯 *Top Predictors*\n{top_text}"
             }
+        }
+    ]
+
+
+def _build_reminder_blocks(matches):
+    blocks = [
+        {
+            "type": "header",
+            "text": {
+                "type": "plain_text",
+                "text": "⏰ Prediction Reminder"
+            }
         },
         {
-            "type": "actions",
-            "elements": [
-                {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": "You still have pending fixtures today. Submit before kick-off ⚽"
+            }
+        },
+        {"type": "divider"}
+    ]
+
+    for match in matches:
+        blocks.extend([
+            {
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text":
+                        f"🏆 *{match['team1']} vs {match['team2']}*\n"
+                        f"📍 {match['stage']}\n"
+                        f"🕒 {to_ist(match['match_time'])}"
+                },
+                "accessory": {
                     "type": "button",
                     "text": {
                         "type": "plain_text",
-                        "text": "🏆 View Leaderboard"
+                        "text": "⚽ Predict Now"
                     },
                     "style": "primary",
-                    "action_id": "view_leaderboard_button"
+                    "action_id": f"predict_match_{match['id']}",
+                    "value": str(match["id"])
                 }
-            ]
-        }
-    ]
+            },
+            {"type": "divider"}
+        ])
+
+    return blocks
 
 
 @slack_app.action("view_leaderboard_button")
