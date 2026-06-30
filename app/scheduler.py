@@ -166,7 +166,7 @@ def start_scheduler(app):
     # Daily schedule at 11 AM IST
     scheduler.add_job(
       post_daily_schedule,
-      CronTrigger(hour=11, minute=0, timezone="Asia/Kolkata"),
+      CronTrigger(hour=12, minute=0, timezone="Asia/Kolkata"),
       args=[app],
       id="daily_schedule",
       replace_existing=True,
@@ -176,7 +176,7 @@ def start_scheduler(app):
     # Daily leaderboard DM at 11 AM IST
     scheduler.add_job(
       post_daily_leaderboard,
-      CronTrigger(hour=11, minute=0, timezone="Asia/Kolkata"),
+      CronTrigger(hour=12, minute=20, timezone="Asia/Kolkata"),
       args=[app],
       id="daily_leaderboard",
       replace_existing=True,
