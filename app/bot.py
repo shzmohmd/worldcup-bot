@@ -432,22 +432,17 @@ def _build_leaderboard_blocks(leaders):
         # Medal separate from rank (important for alignment)
         badge = medals[i] if i < 3 else "  "
 
-        # Rank always fixed width
-        rank = f"{i+1}.".ljust(4)
-
-        # Dynamic player width
-        name = names[i].ljust(max_name_length + 3)
-
-        # Fixed points width
-        points = str(user["total_points"]).rjust(4)
+        rank = f"{i+1}.".ljust(5)
+        name = names[i].ljust(max_name_length + 4)
+        points = str(user["total_points"]).ljust(3)
 
         rows.append(f"{badge} {rank}{name}{points}")
 
-    table = (
+    table += (
         f"{'':<3} "
-        f"{'Rank'.ljust(4)}"
-        f"{'Player'.ljust(max_name_length + 3)}"
-        f"{'Pts'.rjust(4)}\n"
+        f"{'Rank'.ljust(5)}"
+        f"{'Player'.ljust(max_name_length + 4)}"
+        f"{'Pts'.ljust(3)}\n"
     )
 
     table += "\n".join(rows)
