@@ -13,7 +13,7 @@ from app.database import db
 
 logger = logging.getLogger(__name__)
 
-CHANNEL = os.environ.get("WC_CHANNEL")
+CHANNELS = os.environ.get("WC_CHANNELS", "").split(",")
 
 
 def post_daily_schedule(app):
@@ -27,11 +27,12 @@ def post_daily_schedule(app):
 
     blocks = _build_schedule_blocks(matches)
 
-    app.client.chat_postMessage(
-        channel=CHANNEL,
-        blocks=blocks,
-        text="🏆 Today's World Cup Matches"
-    )
+    for channel in CHANNELS:
+        app.client.chat_postMessage(
+            channel=channel.strip(),
+            blocks=blocks,
+            text="🏆 Today's World Cup Matches"
+        )
 
     logger.info("Posted daily match schedule")
 
