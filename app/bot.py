@@ -436,7 +436,7 @@ def _build_prediction_modal(match, channel_id=None):
         "private_metadata": json.dumps({
             "match_id": match_id,
             "channel_id": body["channel_id"]
-        })
+        }),
         "title": {"type": "plain_text", "text": "⚽ Score Prediction"},
         "submit": {"type": "plain_text", "text": "Submit"},
         "close": {"type": "plain_text", "text": "Cancel"},
