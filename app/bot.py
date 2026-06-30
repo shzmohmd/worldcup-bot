@@ -14,6 +14,8 @@ from dotenv import load_dotenv
 from app.database import db
 from app.scheduler import start_scheduler
 from app.scoring import calculate_points
+import logging
+logger = logging.getLogger(__name__)
 
 load_dotenv()
 
