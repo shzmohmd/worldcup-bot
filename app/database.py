@@ -23,18 +23,23 @@ class Database:
         res = self.client.table("matches").select("*").eq("id", match_id).single().execute()
         return res.data
 
-    def get_upcoming_matches(self, limit: int = 5) -> list:
-        from datetime import datetime, timezone
-        now = datetime.now(timezone.utc).isoformat()
+    def get_upcoming_matches(self, limit: int = 10) -> list:
+        from datetime import datetime, timezone, timedelta
+
+        now = datetime.now(timezone.utc)
+        next_24h = now + timedelta(hours=24)
+
         res = (
             self.client.table("matches")
             .select("*")
             .is_("result_score1", "null")
-            .gte("match_time", now)
+            .gte("match_time", now.isoformat())
+            .lte("match_time", next_24h.isoformat())
             .order("match_time")
             .limit(limit)
             .execute()
         )
+
         return res.data or []
 
     def get_next_match(self) -> dict | None:
