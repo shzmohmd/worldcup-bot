@@ -83,14 +83,19 @@ def handle_predict(ack, body, client):
 def handle_leaderboard(ack, body, client):
     """Post the current leaderboard."""
     ack()
-    leaders = db.get_leaderboard(limit=15)
-    blocks = _build_leaderboard_blocks(leaders)
-    client.chat_postEphemeral(
-        channel=body["channel_id"],
-        user=body["user_id"],
-        blocks=blocks,
-        text="🏆 World Cup Leaderboard"
-    )
+
+    try:
+        leaders = db.get_leaderboard(limit=15)
+        blocks = _build_leaderboard_blocks(leaders)
+
+        client.chat_postEphemeral(
+            channel=body["channel_id"],
+            user=body["user_id"],
+            blocks=blocks,
+            text="🏆 World Cup Leaderboard"
+        )
+    except Exception as e:
+        logger.error(f"Leaderboard failed: {e}")
 
 
 @slack_app.command("/wc-mypredictions")
