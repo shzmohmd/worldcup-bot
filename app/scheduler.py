@@ -112,7 +112,7 @@ def start_scheduler(app):
     # Daily schedule at 11 AM IST
     scheduler.add_job(
       post_daily_schedule,
-      CronTrigger(hour=14, minute=40, timezone="Asia/Kolkata"),
+      CronTrigger(hour=15, minute=05, timezone="Asia/Kolkata"),
       args=[app],
       id="daily_schedule",
       replace_existing=True,
@@ -122,7 +122,7 @@ def start_scheduler(app):
     # Daily leaderboard DM at 11 AM IST
     scheduler.add_job(
       post_daily_leaderboard,
-      CronTrigger(hour=14, minute=45, timezone="Asia/Kolkata"),
+      CronTrigger(hour=15, minute=15, timezone="Asia/Kolkata"),
       args=[app],
       id="daily_leaderboard",
       replace_existing=True,
@@ -132,7 +132,7 @@ def start_scheduler(app):
     # Pending prediction reminder
     scheduler.add_job(
         post_evening_prediction_reminder,
-        CronTrigger(hour=14, minute=50, timezone="Asia/Kolkata"),
+        CronTrigger(hour=15, minute=10, timezone="Asia/Kolkata"),
         args=[app],
         id="evening_prediction_reminder",
         replace_existing=True,
