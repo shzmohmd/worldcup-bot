@@ -116,7 +116,7 @@ def start_scheduler(app):
     # Daily schedule at 11 AM IST
     scheduler.add_job(
       post_daily_schedule,
-      CronTrigger(hour=15, minute=05, timezone="Asia/Kolkata"),
+      CronTrigger(hour=15, minute=7, timezone="Asia/Kolkata"),
       args=[app],
       id="daily_schedule",
       replace_existing=True,
