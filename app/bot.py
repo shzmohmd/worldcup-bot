@@ -219,7 +219,7 @@ def handle_result(ack, body, client):
         )
 
     # Announce result in channel
-    channel = os.environ.get("WC_CHANNEL", body["channel_id"])
+    channel = os.environ.get("WC_CHANNEL") or body["channel_id"]
     client.chat_postMessage(
         channel=channel,
         blocks=_build_result_announcement(match, score1, score2, pen_winner, predictions),
@@ -246,7 +246,8 @@ def handle_schedule(ack, body, client):
     client.chat_postEphemeral(
         channel=body["channel_id"],
         user=body["user_id"],
-        blocks=blocks
+        blocks=blocks,
+        text="🏆 Today's World Cup Matches"
     )
 
 
