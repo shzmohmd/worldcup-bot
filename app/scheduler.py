@@ -29,19 +29,19 @@ def post_daily_leaderboard(app):
 
     for user in all_users:
         try:
-          user_rank = db.get_user_rank(user["user_id"])
-          user_blocks = blocks.copy()
+            user_rank = db.get_user_rank(user["user_id"])
+            user_blocks = blocks.copy()
 
-          if user_rank and user_rank["rank"] > 15:
-              user_blocks.append({"type": "divider"})
-              user_blocks.append({
-                  "type": "section",
-                  "text": {
-                      "type": "mrkdwn",
-                      "text":
-                          f"📍 *Your Rank:* #{user_rank['rank']} — *{user_rank['points']} pts*"
-                  }
-              })
+            if user_rank and user_rank["rank"] > 15:
+                user_blocks.append({"type": "divider"})
+                user_blocks.append({
+                    "type": "section",
+                    "text": {
+                        "type": "mrkdwn",
+                        "text":
+                            f"📍 *Your Rank:* #{user_rank['rank']} — *{user_rank['points']} pts*"
+                    }
+                })
 
             app.client.chat_postMessage(
                 channel=user["user_id"],
