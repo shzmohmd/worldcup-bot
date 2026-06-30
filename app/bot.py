@@ -429,10 +429,11 @@ def _build_leaderboard_blocks(leaders):
     rows = []
 
     for i, user in enumerate(leaders):
-        rank = medals[i] if i < 3 else f"{i+1}."
+        # Medal separate from rank (important for alignment)
+        badge = medals[i] if i < 3 else "  "
 
-        # Fixed rank width
-        rank = rank.ljust(5)
+        # Rank always fixed width
+        rank = f"{i+1}.".ljust(4)
 
         # Dynamic player width
         name = names[i].ljust(max_name_length + 3)
@@ -440,10 +441,11 @@ def _build_leaderboard_blocks(leaders):
         # Fixed points width
         points = str(user["total_points"]).rjust(4)
 
-        rows.append(f"{rank}{name}{points}")
+        rows.append(f"{badge} {rank}{name}{points}")
 
     table = (
-        f"{'Rank'.ljust(5)}"
+        f"{'':<3} "
+        f"{'Rank'.ljust(4)}"
         f"{'Player'.ljust(max_name_length + 3)}"
         f"{'Pts'.rjust(4)}\n"
     )
