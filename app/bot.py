@@ -429,20 +429,21 @@ def _build_leaderboard_blocks(leaders):
     rows = []
 
     for i, user in enumerate(leaders):
-        # Medal separate from rank (important for alignment)
+        # Medal separate from rank
         badge = medals[i] if i < 3 else "  "
 
-        rank = f"{i+1}.".ljust(6)
-        name = names[i].ljust(max_name_length + 4)
-        points = str(user["total_points"]).ljust(10)
+        # Fixed-width columns
+        rank = f"{i+1}.".ljust(8)        # 8 chars
+        name = names[i].ljust(15)        # 15 chars
+        points = str(user["total_points"]).ljust(5)   # 5 chars
 
         rows.append(f"{badge} {rank}{name}{points}")
 
     table = (
-        f"{'':<1} "
-        f"{'Rank'.ljust(5)}"
-        f"{'Player'.ljust(max_name_length + 7)}"
-        f"{'Pts'.ljust(6)}\n"
+        f"{'':<3}"        # keep header aligned with medal space
+        f"{'Rank'.ljust(8)}"
+        f"{'Player'.ljust(15)}"
+        f"{'Pts'.ljust(5)}\n"
     )
 
     table += "\n".join(rows)
