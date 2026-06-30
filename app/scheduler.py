@@ -10,7 +10,6 @@ import logging
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
 from app.database import db
-from app.bot import _build_schedule_blocks, _build_leaderboard_blocks
 
 logger = logging.getLogger(__name__)
 
@@ -19,6 +18,7 @@ CHANNEL = os.environ.get("WC_CHANNEL")
 
 def post_daily_leaderboard(app):
     """Send leaderboard to all participants every day."""
+    from app.bot import _build_leaderboard_blocks
     top_leaders = db.get_leaderboard(limit=15)
     all_users = db.get_leaderboard()
 
@@ -54,6 +54,7 @@ def post_daily_leaderboard(app):
 
 def post_daily_schedule(app):
     """Post today's matches every day at 11 AM IST."""
+    from app.bot import _build_schedule_blocks
     matches = db.get_today_matches()
 
     if not matches:
@@ -73,6 +74,7 @@ def post_daily_schedule(app):
 
 def post_evening_prediction_reminder(app):
     """5 PM reminder to users with pending predictions."""
+    from app.bot import _build_schedule_blocks
     matches = db.get_today_matches()
 
     if not matches:
