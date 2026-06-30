@@ -154,4 +154,17 @@ class Database:
         return res.data or []
 
 
+    def get_user_rank(self, user_id: str):
+        leaders = self.get_leaderboard()  # all users
+
+        for i, user in enumerate(leaders):
+            if user["user_id"] == user_id:
+                return {
+                    "rank": i + 1,
+                    "points": user["total_points"]
+                }
+
+        return None
+
+
 db = Database()
