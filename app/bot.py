@@ -166,9 +166,18 @@ def handle_result(ack, body, client):
         return
 
     match_id = parts[0]
-    score1 = int(parts[1])
-    score2 = int(parts[2])
-    pen_winner = int(parts[3]) if len(parts) > 3 else None
+
+    try:
+        score1 = int(parts[1])
+        score2 = int(parts[2])
+        pen_winner = int(parts[3]) if len(parts) > 3 else None
+    except ValueError:
+        client.chat_postEphemeral(
+            channel=body["channel_id"],
+            user=user_id,
+            text="Invalid score input. Use numbers only."
+        )
+        return
 
     match = db.get_match(match_id)
     if not match:
@@ -257,7 +266,6 @@ def handle_schedule(ack, body, client):
 
 @slack_app.view("submit_prediction")
 def handle_prediction_submission(ack, body, view, client):
-    ack()
     user_id = body["user"]["id"]
     values = view["state"]["values"]
     match_id = view["private_metadata"]
@@ -307,6 +315,7 @@ def handle_prediction_submission(ack, body, view, client):
         return
 
     match = db.get_match(match_id)
+    ack()
 
     # Upsert prediction
     db.upsert_prediction(user_id, match_id, score1, score2, pen_winner)
