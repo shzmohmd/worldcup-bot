@@ -323,6 +323,20 @@ def handle_prediction_submission(ack, body, view, client):
         return
 
     match = db.get_match(match_id)
+    # Final deadline validation
+    match_time = datetime.fromisoformat(match["match_time"])
+    if match_time.tzinfo is None:
+        match_time = match_time.replace(tzinfo=timezone.utc)
+
+    if datetime.now(timezone.utc) >= match_time:
+        ack(
+            response_action="errors",
+            errors={
+                "score1": "Prediction deadline is over for this match."
+            }
+        )
+        return
+    
     ack()
 
     # Upsert prediction
@@ -689,6 +703,18 @@ def open_prediction_from_schedule(ack, body, client):
             channel=body["channel"]["id"],
             user=body["user"]["id"],
             text="Match not found."
+        )
+        return
+
+    match_time = datetime.fromisoformat(match["match_time"])
+    if match_time.tzinfo is None:
+        match_time = match_time.replace(tzinfo=timezone.utc)
+
+    if datetime.now(timezone.utc) >= match_time:
+        client.chat_postEphemeral(
+            channel=body["channel"]["id"],
+            user=body["user"]["id"],
+            text=f"⏰ Predictions for *{match['team1']} vs {match['team2']}* are now closed!"
         )
         return
 
