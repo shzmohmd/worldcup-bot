@@ -501,7 +501,32 @@ def _build_my_predictions_blocks(predictions):
 
 
 def _build_schedule_blocks(matches):
-    blocks = []
+    blocks = [
+        {
+            "type": "header",
+            "text": {
+                "type": "plain_text",
+                "text": "🏆 YOUGotaGift World Cup Prediction Contest"
+            }
+        },
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": "R32 | Today’s Fixtures — Lock your predictions now ⚽"
+            }
+        },
+        {
+            "type": "context",
+            "elements": [
+                {
+                    "type": "mrkdwn",
+                    "text": "🎯 Mark your score before kick-off."
+                }
+            ]
+        },
+        {"type": "divider"}
+    ]
 
     for match in matches:
         blocks.extend([
@@ -518,8 +543,9 @@ def _build_schedule_blocks(matches):
                     "type": "button",
                     "text": {
                         "type": "plain_text",
-                        "text": "Predict"
+                        "text": "⚽ Predict Now"
                     },
+                    "style": "primary",
                     "action_id": f"predict_match_{match['id']}",
                     "value": str(match["id"])
                 }
